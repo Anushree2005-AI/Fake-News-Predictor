@@ -58,5 +58,5 @@ Run Locally
 Clone the repo and install dependencies:  
 
 ```bash
-git clone https://github.com/your-username/Fake-News-Detection.git
+git clone https://github.com/Anushree2005-AI/Fake-News-Predictor.git
 cd Fake-News-Detection
