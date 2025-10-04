@@ -60,4 +60,3 @@ Clone the repo and install dependencies:
 ```bash
 git clone https://github.com/your-username/Fake-News-Detection.git
 cd Fake-News-Detection
-pip install -r requirements.txt
