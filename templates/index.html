@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake News Detector</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #444;
+            font-size: 1.1em;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1em;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.3s;
+            background: white;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea::placeholder {
+            color: #aaa;
+        }
+
+        .char-count {
+            text-align: right;
+            color: #999;
+            font-size: 0.9em;
+            margin-top: -15px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.3em;
+            font-weight: 600;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result.fake {
+            background: #fee;
+            color: #c33;
+            border: 2px solid #faa;
+        }
+
+        .result.real {
+            background: #efe;
+            color: #3c3;
+            border: 2px solid #afa;
+        }
+
+        .error {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .example {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .example h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .example p {
+            color: #666;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Fake News Detector</h1>
+        <p class="subtitle">Enter a news article to check its authenticity</p>
+        
+        <form method="POST" action="/" onsubmit="return validateForm()">
+            <div>
+                <label for="news">News Article:</label>
+                <textarea 
+                    id="news" 
+                    name="news" 
+                    rows="10"
+                    cols="80"
+                    placeholder="Paste your news article here... (minimum 10 characters)"
+                    oninput="updateCharCount()"
+                    required
+                >{{ news_text if news_text }}</textarea>
+                <div class="char-count" id="charCount">0 characters</div>
+            </div>
+            
+            <button type="submit" id="submitBtn">Analyze News</button>
+        </form>
+
+        {% if error %}
+        <div class="error">
+            ⚠️ {{ error }}
+        </div>
+        {% endif %}
+
+        {% if prediction %}
+        <div class="result {{ prediction.lower() }}">
+            <div class="icon">
+                {% if prediction.lower() == 'fake' %}
+                    ❌
+                {% else %}
+                    ✅
+                {% endif %}
+            </div>
+            <div>
+                This news is classified as: <strong>{{ prediction }}</strong>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="example">
+            <h3>💡 Try an example:</h3>
+            <p>Click the button below to fill the text area with sample news</p>
+            <button type="button" onclick="fillExample()" style="margin-top: 10px; padding: 8px 16px; font-size: 0.9em;">
+                Load Example Article
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // Update character count
+        function updateCharCount() {
+            const textarea = document.getElementById('news');
+            const charCount = document.getElementById('charCount');
+            const length = textarea.value.length;
+            charCount.textContent = length + ' character' + (length !== 1 ? 's' : '');
+        }
+
+        // Validate form before submission
+        function validateForm() {
+            const textarea = document.getElementById('news');
+            const text = textarea.value.trim();
+            
+            if (text.length === 0) {
+                alert('Please enter some text to analyze.');
+                textarea.focus();
+                return false;
+            }
+            
+            if (text.length < 10) {
+                alert('Please enter at least 10 characters.');
+                textarea.focus();
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Fill with example text
+        function fillExample() {
+            const textarea = document.getElementById('news');
+            textarea.value = "Scientists have made a groundbreaking discovery in renewable energy technology. Researchers at MIT developed a new type of solar panel that is 40% more efficient than current models. The innovation uses a novel photovoltaic material that captures a broader spectrum of sunlight. This breakthrough could significantly reduce the cost of solar energy and accelerate the transition to clean power sources worldwide.";
+            updateCharCount();
+            textarea.focus();
+        }
+
+        // Initialize character count on page load
+        window.onload = function() {
+            updateCharCount();
+            // Focus on textarea
+            document.getElementById('news').focus();
+        };
+
+        // Prevent form resubmission on page refresh
+        if (window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.href);
+        }
+    </script>
+</body>
+</html>
